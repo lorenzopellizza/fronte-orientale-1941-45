@@ -1,0 +1,1468 @@
+@layer reset, tokens, base, components, utilities;
+
+@layer reset {
+  body,
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  ul,
+  ol,
+  figure,
+  blockquote {
+    margin: 0;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+    accent-color: #eab308;
+    --bg-app: #121512;
+    --bg-panel: #1a1f1a;
+    --bg-panel-elevated: #232a22;
+    --bg-card: #1d231d;
+    --border-subtle: #384234;
+    --border-strong: #5c6b50;
+    --brass-border: #856d3b;
+    --text-main: #f4f1ea;
+    --text-muted: #a8a29e;
+
+    /* Axis Theme (Wehrmacht Feldgrau / Steel Blue) */
+    --axis-primary: #3b4d5e;
+    --axis-accent: #60a5fa;
+    --axis-bg: #17212b;
+    --axis-border: #47627d;
+
+    /* USSR Theme (Red Army Crimson / Ochre) */
+    --ussr-primary: #7f1d1d;
+    --ussr-accent: #f87171;
+    --ussr-bg: #2a1414;
+    --ussr-border: #991b1b;
+
+    /* Gold / Guards / Objective */
+    --gold: #facc15;
+    --gold-bg: rgba(250, 204, 21, 0.16);
+    --danger: #ef4444;
+    --success: #22c55e;
+
+    --radius-sm: 5px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-app);
+    background-image:
+      radial-gradient(circle at 50% 18%, rgba(234, 179, 8, 0.08) 0%, transparent 55%),
+      repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.015) 0px,
+        rgba(255, 255, 255, 0.015) 1px,
+        transparent 1px,
+        transparent 32px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.015) 0px,
+        rgba(255, 255, 255, 0.015) 1px,
+        transparent 1px,
+        transparent 32px
+      ),
+      radial-gradient(circle at 50% 35%, #232920 0%, #0e110d 100%);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    line-height: 1.4;
+    min-block-size: 100dvh;
+    overflow-x: hidden;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  dialog {
+    background: var(--bg-panel);
+    color: var(--text-main);
+    border: 2px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    max-inline-size: min(94vw, 900px);
+    inline-size: 100%;
+    max-block-size: 88dvh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+  }
+
+  dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+  }
+}
+
+@layer components {
+  .app-shell {
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    min-block-size: 100dvh;
+  }
+
+  /* Top Command Header */
+  .top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    padding: 0.55rem 1rem;
+    background: linear-gradient(to bottom, #1e2630, #151b22);
+    border-block-end: 2px solid #2e3a48;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .game-logo-title {
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #f8fafc;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  }
+
+  .top-bar-group {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  /* Visual Turn Track Strip */
+  .turn-track-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    background: #0f1419;
+    padding: 0.2rem 0.35rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .turn-step-chip {
+    font-size: 0.68rem;
+    font-family: var(--font-mono);
+    padding: 0.15rem 0.38rem;
+    border-radius: 4px;
+    color: var(--text-muted);
+  }
+
+  .turn-step-chip.past-turn {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+
+  .turn-step-chip.active-turn {
+    background: var(--gold);
+    color: #0f172a;
+    font-weight: 900;
+    box-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
+  }
+
+  .stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg-panel-elevated);
+    border: 1px solid var(--border-subtle);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .vp-pill {
+    border-color: var(--gold);
+    background: rgba(250, 204, 21, 0.1);
+  }
+
+  /* Tactical Advisor Bar */
+  .tactical-advisor-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.45rem 1rem;
+    background: #17202a;
+    border-block-end: 1px solid var(--border-subtle);
+    font-size: 0.84rem;
+  }
+
+  .tactical-advisor-bar.advisor-active {
+    background: linear-gradient(90deg, rgba(250, 204, 21, 0.18), rgba(34, 197, 94, 0.14));
+    border-block-end: 1px solid var(--gold);
+  }
+
+  .advisor-badge {
+    padding: 0.18rem 0.55rem;
+    border-radius: 4px;
+    background: #0f172a;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-weight: 800;
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .advisor-text {
+    color: #f8fafc;
+    font-weight: 500;
+  }
+
+  .alert-banner {
+    padding: 0.45rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.84rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .alert-error {
+    background: rgba(239, 68, 68, 0.24);
+    color: #fecaca;
+  }
+
+  .alert-toast {
+    background: rgba(34, 197, 94, 0.22);
+    color: #bbf7d0;
+  }
+
+  .normandy-banner,
+  .attack-confirm-bar {
+    padding: 0.65rem 1.2rem;
+    background: linear-gradient(90deg, rgba(234, 179, 8, 0.22), rgba(220, 38, 38, 0.22));
+    border-bottom: 2px solid var(--gold);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Main 3-Column Wargame Board */
+  .main-board {
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    align-items: start;
+    overflow-y: auto;
+  }
+
+  @media (max-width: 1240px) {
+    .main-board {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Side Panels (Reserve + Airfield + HQ) */
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    background: rgba(22, 28, 36, 0.92);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.65rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+
+  .hq-banner {
+    padding: 0.65rem;
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .axis-hq {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid var(--axis-border);
+  }
+
+  .ussr-hq {
+    background: linear-gradient(135deg, #450a0a, #1f0808);
+    border: 1px solid var(--ussr-border);
+  }
+
+  .hq-title {
+    font-weight: 900;
+    font-size: 0.92rem;
+    letter-spacing: 0.04em;
+  }
+
+  .hq-subtitle {
+    font-size: 0.7rem;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .hq-Counters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+
+  .hq-counter-box {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    padding: 0.25rem 0.45rem;
+    text-align: center;
+  }
+
+  .hq-counter-label {
+    display: block;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+  }
+
+  .hq-counter-val {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: #fff;
+  }
+
+  .pp-box .hq-counter-val {
+    color: var(--gold);
+  }
+
+  .panel-section {
+    background: var(--bg-panel-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.55rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .dropzone-active {
+    border: 2px dashed var(--success) !important;
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.3) !important;
+  }
+
+  .panel-section-title {
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-block-end: 0.45rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+  }
+
+  .sup-badge {
+    border-color: var(--gold) !important;
+    color: var(--gold) !important;
+    background: rgba(250, 204, 21, 0.12) !important;
+  }
+
+  /* Center Map Sectors */
+  .sectors-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .sector-row {
+    background: linear-gradient(180deg, #1b222c 0%, #141a22 100%);
+    border: 2px solid #2e3b4b;
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  }
+
+  .sector-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding-block-end: 0.45rem;
+    border-block-end: 1px solid var(--border-subtle);
+  }
+
+  .sector-title {
+    font-size: 1.02rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #f8fafc;
+  }
+
+  .front-pill {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
+    background: #0f141a;
+    border: 1px solid var(--border-strong);
+    border-radius: 5px;
+  }
+
+  /* 7-Cell Map Track */
+  .track-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.35rem;
+  }
+
+  .track-cell {
+    position: relative;
+    padding: 0.45rem 0.35rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+    text-align: center;
+    font-size: 0.74rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-block-size: 68px;
+    transition: transform 0.15s ease, border-color 0.2s ease;
+  }
+
+  .track-cell.axis-controlled {
+    background: linear-gradient(180deg, rgba(44, 62, 80, 0.72), rgba(23, 33, 43, 0.9));
+    border-color: var(--axis-border);
+  }
+
+  .track-cell.ussr-controlled {
+    background: linear-gradient(180deg, rgba(127, 29, 29, 0.58), rgba(42, 20, 20, 0.9));
+    border-color: var(--ussr-border);
+  }
+
+  .track-cell.front-marker {
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 14px rgba(250, 204, 21, 0.45);
+    transform: translateY(-2px);
+  }
+
+  .track-cell.objective {
+    background-image: radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.24), transparent 75%);
+  }
+
+  .cell-index {
+    font-size: 0.62rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .cell-owner-tag {
+    font-weight: 800;
+  }
+
+  .cell-landmark-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    margin-block: 0.15rem;
+  }
+
+  .cell-name {
+    font-weight: 800;
+    font-size: 0.76rem;
+    line-height: 1.15;
+  }
+
+  .front-badge {
+    font-size: 0.58rem;
+    background: var(--gold);
+    color: #090d11;
+    font-weight: 900;
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-inline: auto;
+    letter-spacing: 0.03em;
+  }
+
+  /* Formations Area inside a Sector */
+  .sector-formations {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+  }
+
+  @media (max-width: 820px) {
+    .sector-formations {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .formation-lane {
+    background: rgba(11, 15, 20, 0.55);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem;
+    min-block-size: 92px;
+  }
+
+  .formation-lane.axis-lane {
+    border-inline-start: 4px solid var(--axis-accent);
+  }
+
+  .formation-lane.ussr-lane {
+    border-inline-end: 4px solid var(--ussr-accent);
+  }
+
+  .lane-label {
+    font-size: 0.72rem;
+    margin-block-end: 0.45rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+
+  .commander-chip {
+    font-size: 0.68rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 800;
+    background: rgba(250, 204, 21, 0.15);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+  }
+
+  .supply-warning {
+    font-size: 0.68rem;
+    color: #fbbf24;
+    font-weight: 700;
+  }
+
+  .empty-lane-msg {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 0.6rem 0.25rem;
+    text-align: center;
+  }
+
+  .formations-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 0.5rem;
+  }
+
+  /* Tabletop Wargame Counter / Formation Card */
+  .formation-card {
+    background: linear-gradient(180deg, #232c38 0%, #181f28 100%);
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+    transition: transform 0.14s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .formation-card:hover {
+    transform: translateY(-2px);
+    border-color: #94a3b8;
+  }
+
+  .formation-card.axis {
+    border-top: 4px solid var(--axis-accent);
+  }
+
+  .formation-card.ussr {
+    border-top: 4px solid var(--ussr-accent);
+  }
+
+  .formation-card.guards {
+    border: 2px solid var(--gold);
+    background: linear-gradient(160deg, #242c37 0%, rgba(250, 204, 21, 0.16) 100%);
+    box-shadow: 0 0 12px rgba(250, 204, 21, 0.25);
+  }
+
+  .formation-card.selected-unit {
+    outline: 2px solid var(--gold);
+    box-shadow: 0 0 16px rgba(250, 204, 21, 0.45);
+  }
+
+  .formation-card.equip-target-glow {
+    border-color: var(--gold);
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.55);
+  }
+
+  .formation-card.exhausted {
+    opacity: 0.68;
+  }
+
+  .formation-card.encircled {
+    border-color: var(--danger);
+    box-shadow: inset 0 0 0 1px var(--danger), 0 0 12px rgba(239, 68, 68, 0.4);
+  }
+
+  .formation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .formation-name {
+    font-weight: 800;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .unit-art-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 6px;
+    padding: 0.25rem 0.45rem;
+  }
+
+  .combat-stat-shield {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 38px;
+    padding: 0.12rem 0.3rem;
+    border-radius: 5px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .atk-shield {
+    border-color: rgba(248, 113, 113, 0.5);
+  }
+
+  .def-shield {
+    border-color: rgba(96, 165, 250, 0.5);
+  }
+
+  .shield-label {
+    font-size: 0.56rem;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .shield-num {
+    font-family: var(--font-mono);
+    font-size: 0.96rem;
+    font-weight: 900;
+    color: #fff;
+  }
+
+  .formation-type-badge {
+    font-size: 0.58rem;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--bg-panel-elevated);
+    color: var(--text-muted);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .strength-bar {
+    display: flex;
+    gap: 3px;
+    block-size: 8px;
+  }
+
+  .strength-pip {
+    flex: 1;
+    border-radius: 2px;
+    background: #27313f;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .strength-pip.filled {
+    background: var(--success);
+  }
+
+  .strength-pip.critical {
+    background: var(--danger);
+  }
+
+  .keyword-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.22rem;
+  }
+
+  .keyword-tag {
+    font-size: 0.6rem;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--bg-panel-elevated);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    cursor: help;
+  }
+
+  .keyword-tag.guardia {
+    background: var(--gold-bg);
+    color: var(--gold);
+    border-color: var(--gold);
+    font-weight: 800;
+  }
+
+  .keyword-tag.fragile {
+    color: #fca5a5;
+    border-color: #7f1d1d;
+  }
+
+  .keyword-tag.inverno {
+    color: #93c5fd;
+    border-color: #1e3a8a;
+  }
+
+  .equipment-strip {
+    font-size: 0.68rem;
+    padding: 0.25rem 0.4rem;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed var(--border-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .equipment-strip.empty-slot {
+    color: var(--text-muted);
+    font-style: italic;
+    opacity: 0.65;
+  }
+
+  .unit-quick-actions {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.2rem;
+    padding-top: 0.3rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .unit-quick-actions .btn {
+    flex: 1;
+  }
+
+  /* Bottom Bar: Physical Playing Cards in Hand + Special Orders */
+  .bottom-bar {
+    background: linear-gradient(180deg, #171d25 0%, #0f141a 100%);
+    border-block-start: 2px solid #2e3b4b;
+    padding: 0.65rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  @media (max-width: 1024px) {
+    .bottom-bar {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .hand-area {
+    display: flex;
+    gap: 0.65rem;
+    overflow-x: auto;
+    padding-block-end: 0.3rem;
+  }
+
+  /* Physical Tabletop Card */
+  .hand-card {
+    min-inline-size: 192px;
+    max-inline-size: 210px;
+    background: linear-gradient(180deg, #252f3d 0%, #181f29 100%);
+    border: 2px solid #3d4d63;
+    border-radius: 10px;
+    padding: 0.55rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.4rem;
+    font-size: 0.74rem;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  .hand-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--gold);
+  }
+
+  .hand-card.selected {
+    border-color: var(--gold);
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.5);
+    transform: translateY(-5px);
+  }
+
+  .hand-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .hand-card-title {
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: #fff;
+  }
+
+  .hand-card-cost {
+    font-family: var(--font-mono);
+    background: var(--gold);
+    color: #0f172a;
+    padding: 1px 6px;
+    border-radius: 99px;
+    font-size: 0.68rem;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+
+  .card-art-frame {
+    background: rgba(10, 14, 20, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 0.35rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .card-year-tag {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+
+  .card-stat-pills {
+    display: flex;
+    gap: 0.35rem;
+    justify-content: center;
+  }
+
+  .mini-stat {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .mini-stat.atk {
+    color: #fca5a5;
+    border: 1px solid rgba(248, 113, 113, 0.4);
+  }
+
+  .mini-stat.def {
+    color: #93c5fd;
+    border: 1px solid rgba(96, 165, 250, 0.4);
+  }
+
+  .hand-card-desc {
+    font-size: 0.7rem;
+    color: #cbd5e1;
+    line-height: 1.3;
+  }
+
+  .hand-card-footer {
+    display: flex;
+    gap: 0.3rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-block-start: 0.2rem;
+  }
+
+  /* Actions Toolbar */
+  .actions-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--bg-panel-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.65rem;
+  }
+
+  .action-buttons-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 0.38rem 0.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    color: var(--text-main);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    min-block-size: 30px;
+    transition: background 0.14s ease, transform 0.1s ease;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: #334155;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background: #2563eb;
+    border-color: #60a5fa;
+    color: #fff;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: #1d4ed8;
+  }
+
+  .btn-gold {
+    background: linear-gradient(180deg, #facc15 0%, #eab308 100%);
+    border-color: #fef08a;
+    color: #0f172a;
+    font-weight: 900;
+  }
+
+  .btn-gold:hover:not(:disabled) {
+    background: #fde047;
+  }
+
+  .btn-success {
+    background: #16a34a;
+    border-color: #4ade80;
+    color: #fff;
+  }
+
+  .btn-success:hover:not(:disabled) {
+    background: #15803d;
+  }
+
+  .btn-attack-sector {
+    background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
+    border-color: #fca5a5;
+    color: #fff;
+    font-weight: 900;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.45);
+  }
+
+  .btn-attack-sector:hover:not(:disabled) {
+    background: #ef4444;
+    transform: scale(1.02);
+  }
+
+  .btn-danger {
+    background: #7f1d1d;
+    border-color: #ef4444;
+    color: #fecaca;
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: #991b1b;
+  }
+
+  .btn-sm {
+    padding: 0.22rem 0.5rem;
+    font-size: 0.72rem;
+    min-block-size: 26px;
+  }
+
+  /* Breakdown Table */
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-block: 0.75rem;
+  }
+
+  .breakdown-table {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+
+  .breakdown-table th,
+  .breakdown-table td {
+    padding: 0.35rem 0.5rem;
+    border-block-end: 1px solid var(--border-subtle);
+    text-align: start;
+  }
+
+  .breakdown-table td:last-child {
+    text-align: end;
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  /* Log Drawer */
+  .log-drawer {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-end: 0;
+    inline-size: min(440px, 92vw);
+    background: var(--bg-panel);
+    border-inline-start: 2px solid var(--border-strong);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.65);
+  }
+
+  .log-header {
+    padding: 0.75rem 1rem;
+    border-block-end: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .log-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    font-size: 0.76rem;
+  }
+
+  .log-item {
+    padding: 0.45rem 0.6rem;
+    border-radius: var(--radius-sm);
+    background: var(--bg-panel-elevated);
+    border-inline-start: 3px solid var(--border-strong);
+  }
+
+  .log-item.combat {
+    border-inline-start-color: var(--gold);
+  }
+
+  .log-item.victory {
+    border-inline-start-color: var(--success);
+    background: rgba(34, 197, 94, 0.15);
+  }
+
+  /* Hotseat Curtain */
+  .hotseat-curtain {
+    position: fixed;
+    inset: 0;
+    background: rgba(11, 14, 18, 0.96);
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.12rem 0.45rem;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .badge.danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border-color: var(--danger);
+  }
+
+  .air-card-mini,
+  .destroyed-unit-row {
+    padding: 0.35rem 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .air-stats-pill {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--gold);
+  }
+
+  .action-subpanel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .select,
+  .input {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.78rem;
+    color: var(--text-main);
+  }
+
+  .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-block-end: 0.75rem;
+    border-block-end: 1px solid var(--border-subtle);
+    margin-block-end: 1rem;
+  }
+
+  .modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-block-start: 0.75rem;
+    border-block-start: 1px solid var(--border-subtle);
+    margin-block-start: 1rem;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 700px) {
+    .grid-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .stat-box {
+    background: var(--bg-panel-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+  }
+
+  /* =========================================================
+     WWII WAR ROOM DIORAMA BANNERS, CARDS & AI RADIO STYLES
+     ========================================================= */
+
+  .mode-selector-pill {
+    display: inline-flex;
+    background: #111510;
+    border: 1px solid var(--brass-border);
+    border-radius: 7px;
+    padding: 2px;
+    gap: 2px;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.75);
+  }
+
+  .mode-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 0.24rem 0.55rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .mode-btn:hover:not(.active-mode) {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .mode-btn.active-mode.axis-mode {
+    background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+    color: #93c5fd;
+    box-shadow: 0 0 8px rgba(96, 165, 250, 0.35);
+  }
+
+  .mode-btn.active-mode.ussr-mode {
+    background: linear-gradient(180deg, #991b1b 0%, #7f1d1d 100%);
+    color: #fecaca;
+    box-shadow: 0 0 8px rgba(248, 113, 113, 0.35);
+  }
+
+  .mode-btn.active-mode.hotseat-mode {
+    background: linear-gradient(180deg, #ca8a04 0%, #854d0e 100%);
+    color: #fef9c3;
+  }
+
+  .ai-radio-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(20, 26, 19, 0.92);
+    border: 1px solid var(--brass-border);
+    color: #fde68a;
+    padding: 0.22rem 0.65rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    max-inline-size: 560px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ai-radio-pill.transmitting {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(250, 204, 21, 0.45);
+  }
+
+  /* Sector Battlefield Oil-Painting Banner */
+  .warroom-sector-banner {
+    position: relative;
+    block-size: 108px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--brass-border);
+    box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.8), 0 3px 10px rgba(0, 0, 0, 0.45);
+  }
+
+  .warroom-banner-img {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    object-position: center 38%;
+    filter: contrast(1.08) saturate(0.95);
+    transition: transform 0.4s ease;
+  }
+
+  .sector-row:hover .warroom-banner-img {
+    transform: scale(1.02);
+  }
+
+  .warroom-banner-grid-svg {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    pointer-events: none;
+  }
+
+  .warroom-banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(10, 12, 10, 0.72) 0%,
+      rgba(10, 12, 10, 0.25) 48%,
+      rgba(10, 12, 10, 0.84) 100%
+    );
+    padding: 0.45rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .warroom-banner-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .warroom-sector-stamp {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: #fef08a;
+    background: rgba(20, 24, 18, 0.82);
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+  }
+
+  .warroom-sector-coords {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: #e2e8f0;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .warroom-banner-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .warroom-sector-title {
+    font-size: 1.02rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    color: #ffffff;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+  }
+
+  .warroom-sector-sub {
+    font-size: 0.72rem;
+    color: #fde68a;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+    font-weight: 600;
+  }
+
+  .warroom-banner-front-pill {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    background: rgba(15, 20, 15, 0.88);
+    border: 1px solid var(--gold);
+    color: #f8fafc;
+    padding: 0.18rem 0.55rem;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Illustrated WWII Playing Card Art Frame */
+  .warroom-card-art-box {
+    position: relative;
+    block-size: 92px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--brass-border);
+    background: #141814;
+    box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.85);
+  }
+
+  .warroom-card-art-img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    object-position: center;
+    filter: contrast(1.06) sepia(0.12);
+    transition: transform 0.25s ease;
+  }
+
+  .hand-card:hover .warroom-card-art-img {
+    transform: scale(1.06);
+  }
+
+  .warroom-card-art-vignette {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.08) 45%,
+      rgba(0, 0, 0, 0.78) 100%
+    );
+    pointer-events: none;
+  }
+
+  .warroom-card-art-badges {
+    position: absolute;
+    inset-block-start: 4px;
+    inset-inline: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+  }
+
+  .warroom-card-year-stamp {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    font-weight: 900;
+    background: rgba(15, 23, 42, 0.88);
+    color: var(--gold);
+    border: 1px solid rgba(250, 204, 21, 0.5);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .warroom-card-cat-stamp {
+    font-size: 0.54rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    background: rgba(0, 0, 0, 0.75);
+    color: #e2e8f0;
+    padding: 1px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .warroom-card-art-icon-corner {
+    position: absolute;
+    inset-block-end: 3px;
+    inset-inline-end: 4px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.9));
+    pointer-events: none;
+  }
+}
