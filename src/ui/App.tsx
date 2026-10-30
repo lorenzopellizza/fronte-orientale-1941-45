@@ -27,6 +27,7 @@ import {
 } from '../engine/types';
 import { BattleModal } from './BattleModal';
 import { DevToolsPanel } from './DevToolsPanel';
+import { EasternFrontMap } from './EasternFrontMap';
 import { FormationCard } from './FormationCard';
 import { RulesModal } from './RulesModal';
 import { SettingsModal } from './SettingsModal';
@@ -34,9 +35,7 @@ import { StatsModal } from './StatsModal';
 import { KEYWORD_TOOLTIPS, RULE_TOOLTIPS } from './tooltips';
 import {
   CardIllustrationFrame,
-  CityLandmarkIcon,
   FactionEmblem,
-  SectorBattlefieldBanner,
   WarRoomCompassSvg,
 } from './WargameArtwork';
 import { chooseAiAction } from '../engine/ai';
@@ -143,8 +142,17 @@ export const App: React.FC = () => {
       const prevInteractive = getInteractiveSide(state);
       const prevLogLen = state.logs.length;
       const next = applyAction(state, action);
-      setHistory((prev) => [...prev.slice(-39), state]);
-      setState(next);
+      const commitStateChange = () => {
+        setHistory((prev) => [...prev.slice(-39), state]);
+        setState(next);
+      };
+      if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+        (document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() => {
+          commitStateChange();
+        });
+      } else {
+        commitStateChange();
+      }
 
       const newCombatLog = next.logs
         .slice(prevLogLen)
@@ -896,398 +904,74 @@ export const App: React.FC = () => {
       <main className="main-board">
         {renderSidePanel('AXIS')}
 
-        {/* CENTER WAR MAP: 3 SECTORS */}
-        <section className="sectors-container" aria-label="Tabellone del Fronte Orientale">
-          {SECTORS.map((secId) => {
-            const secState = state.sectors[secId];
-            const cells = MAP_DATA[secId].cells;
-            const axisUnits = state.formations.filter((f) => f.side === 'AXIS' && f.location === secId);
-            const ussrUnits = state.formations.filter((f) => f.side === 'USSR' && f.location === secId);
-
-            // Eligible attackers in this sector for active player
-            const eligibleAttackers = state.formations.filter(
-              (f) => f.side === state.activeSide && f.location === secId && !f.exhausted && !f.encircled
-            );
-            const canAttackHere =
-              !isAiTurn &&
-              state.phase === 'ORDERS' &&
-              eligibleAttackers.length > 0 &&
-              ((state.activeSide === 'AXIS' && secState.marker < 6) ||
-                (state.activeSide === 'USSR' && secState.marker > 0));
-
-            const canRetreatHere =
-              !isAiTurn &&
-              state.phase === 'ORDERS' &&
-              !secState.retreatedSidesThisTurn.includes(state.activeSide) &&
-              ((state.activeSide === 'AXIS' && secState.marker > 0 && axisUnits.length > 0) ||
-                (state.activeSide === 'USSR' && secState.marker < 6 && ussrUnits.length > 0));
-
-            const canMoveToThisSector =
-              !isAiTurn && state.phase === 'ORDERS' && movingFormation && validMoveDestinations.includes(secId);
-
-            const canAssignCommanderHere =
-              !isAiTurn && state.phase === 'ORDERS' && selectedCard?.type === 'COMANDANTE';
-
-            const canPlayAirliftHere =
-              !isAiTurn &&
-              state.phase === 'ORDERS' &&
-              selectedCard?.type === 'EVENTO' &&
-              selectedCard.templateId === 'axis_ponte_aereo_42';
-
-            // Sum preview of Attack vs Defense in sector
-            const axisAtkSum = axisUnits
-              .filter((u) => !u.exhausted && !u.encircled)
-              .reduce((s, u) => s + getFormationBaseAttack(u, state.config.modules.experience), 0);
-            const axisDefSum = axisUnits.reduce(
-              (s, u) => s + getFormationBaseDefense(u, state.config.modules.experience),
-              0
-            );
-            const ussrAtkSum = ussrUnits
-              .filter((u) => !u.exhausted && !u.encircled)
-              .reduce((s, u) => s + getFormationBaseAttack(u, state.config.modules.experience), 0);
-            const ussrDefSum = ussrUnits.reduce(
-              (s, u) => s + getFormationBaseDefense(u, state.config.modules.experience),
-              0
-            );
-
-            return (
-              <article
-                key={secId}
-                className={`sector-row ${canMoveToThisSector ? 'dropzone-active' : ''}`}
-              >
-                {/* ILLUSTRATED WAR ROOM BATTLEFIELD DIORAMA BANNER */}
-                <SectorBattlefieldBanner
-                  sector={secId}
-                  season={season}
-                  marker={secState.marker}
-                  currentCellName={cells[secState.marker].name}
-                />
-
-                {/* SECTOR HEADER WITH DIRECT BOARD GAME ACTIONS */}
-                <div className="sector-header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-                    <h2 className="sector-title">🧭 COMANDO DI SETTORE: {secId}</h2>
-                    <span className="front-pill">
-                      ⚔ Fronte su Casella <strong>{secState.marker}</strong>:{' '}
-                      <strong style={{ color: 'var(--gold)' }}>{cells[secState.marker].name}</strong>
-                    </span>
-
-                    {secState.retreatedSidesThisTurn.length > 0 && (
-                      <span className="badge" style={{ borderColor: '#38bdf8', color: '#38bdf8' }}>
-                        🛡 Linea accorciata (+1 DIF {secState.retreatedSidesThisTurn.join(', ')})
-                      </span>
-                    )}
-                    {secState.airliftProtectedThisTurn && (
-                      <span className="badge" style={{ borderColor: 'var(--gold)', color: 'var(--gold)' }}>
-                        ✈ Ponte Aereo attivo
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Direct Board Actions on this Sector */}
-                  <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                    {canMoveToThisSector && movingFormation && (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-success"
-                        style={{ fontWeight: 800 }}
-                        onClick={() =>
-                          dispatch({
-                            type: 'REDEPLOY',
-                            formationId: movingFormation.id,
-                            to: secId,
-                          })
-                        }
-                      >
-                        📥 Sposta &ldquo;{movingFormation.name}&rdquo; in {secId} (1 Ord.)
-                      </button>
-                    )}
-
-                    {canAssignCommanderHere && selectedCard && (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-gold"
-                        onClick={() =>
-                          dispatch({
-                            type: 'EQUIP',
-                            cardId: selectedCard.id,
-                            targetSector: secId,
-                          })
-                        }
-                      >
-                        🎖 Assegna {selectedCard.name} a {secId} ({selectedCard.cost} PP)
-                      </button>
-                    )}
-
-                    {canPlayAirliftHere && selectedCard && (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-gold"
-                        onClick={() =>
-                          dispatch({
-                            type: 'PLAY_EVENT',
-                            cardId: selectedCard.id,
-                            targetSector: secId,
-                          })
-                        }
-                      >
-                        ✈ Attiva Ponte Aereo in {secId} (2 PP)
-                      </button>
-                    )}
-
-                    {canAttackHere && (
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-attack-sector"
-                        onClick={() => {
-                          if (attackEventsInHand.length > 0) {
-                            setAttackConfirmSector(secId);
-                          } else {
-                            dispatch({ type: 'ATTACK', sector: secId, eventCardIds: [] });
-                          }
-                        }}
-                        title="Dichiara un'offensiva in questo settore con tutte le unità pronte (1 Ordine)"
-                      >
-                        ⚔ ATTACCA QUI (Base{' '}
-                        {state.activeSide === 'AXIS'
-                          ? `${axisAtkSum} vs ${ussrDefSum}`
-                          : `${ussrAtkSum} vs ${axisDefSum}`}
-                        )
-                      </button>
-                    )}
-
-                    {canRetreatHere && (
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        onClick={() => dispatch({ type: 'RETREAT', sector: secId })}
-                        title="Ripiega di 1 casella verso il tuo lato per guadagnare +1 Difesa in questo settore fino a fine turno (1 Ordine)"
-                      >
-                        ↩ Ritirata (+1 DIF)
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* ILLUSTRATED 0..6 MAP TRACK */}
-                <div className="track-grid">
-                  {cells.map((cell) => {
-                    const isAxisControlled = cell.index <= secState.marker;
-                    const isFront = cell.index === secState.marker;
-                    return (
-                      <div
-                        key={cell.index}
-                        className={`track-cell ${isAxisControlled ? 'axis-controlled' : 'ussr-controlled'} ${
-                          isFront ? 'front-marker' : ''
-                        } ${cell.isObjectiveCity ? 'objective' : ''}`}
-                      >
-                        <div className="cell-index">
-                          <span>Casella {cell.index}</span>
-                          <span className="cell-owner-tag">{isAxisControlled ? 'ASSE' : 'URSS'}</span>
-                        </div>
-                        <div className="cell-landmark-row">
-                          <CityLandmarkIcon
-                            isBerlin={cell.isBerlin}
-                            isObjective={cell.isObjectiveCity}
-                            isOil={cell.isOil}
-                          />
-                          <div className="cell-name">{cell.name}</div>
-                        </div>
-                        {isFront && (
-                          <div className="front-badge" title="Linea del Fronte attuale">
-                            ⚔ LINEA DEL FRONTE
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* FORMATIONS DEPLOYED IN THIS SECTOR */}
-                <div className="sector-formations">
-                  {/* AXIS LANE */}
-                  <div className="formation-lane axis-lane">
-                    <div className="lane-label">
-                      <span style={{ color: '#93c5fd', fontWeight: 800 }}>
-                        🦅 Fronte Asse (ATT {axisAtkSum} / DIF {axisDefSum})
-                      </span>
-                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                        {secState.axisCommander && (
-                          <span
-                            className="commander-chip axis-cmd"
-                            title={secState.axisCommander.effectText}
-                          >
-                            🎖 {secState.axisCommander.name}
-                          </span>
-                        )}
-                        {state.config.modules.supply && secState.marker > state.config.supply.axisFreeUntil && (
-                          <span title={RULE_TOOLTIPS.RIFORNIMENTO} className="supply-warning">
-                            ⚠ Logistica −{secState.marker - state.config.supply.axisFreeUntil} ATT
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {axisUnits.length === 0 ? (
-                      <div className="empty-lane-msg">⚠️ Settore sguarnito! Nessuna divisione Asse schierata.</div>
-                    ) : (
-                      <div className="formations-list">
-                        {axisUnits.map((f) => {
-                          const canEquipHere =
-                            state.activeSide === 'AXIS' &&
-                            selectedCard?.type === 'EQUIPAGGIAMENTO_TERRA' &&
-                            !f.encircled &&
-                            canEquipCardOnFormation(selectedCard, f);
-
-                          return (
-                            <FormationCard
-                              key={f.id}
-                              formation={f}
-                              viewerSide={humanSide}
-                              fogOfWar={state.config.modules.fogOfWar}
-                              experienceEnabled={state.config.modules.experience}
-                              selected={selectedFormationId === f.id || movingFormationId === f.id}
-                              onSelect={(unit) => {
-                                if (unit.side === state.activeSide && !isAiTurn) {
-                                  setSelectedFormationId(selectedFormationId === unit.id ? null : unit.id);
-                                }
-                              }}
-                              canReconvert={f.side === state.activeSide && state.phase === 'ORDERS' && !isAiTurn}
-                              onReconvertEquipment={(id) =>
-                                dispatch({ type: 'RECONVERT_EQUIPMENT', formationId: id })
-                              }
-                              equipHighlight={
-                                !isAiTurn && canEquipHere && selectedCard?.type === 'EQUIPAGGIAMENTO_TERRA'
-                                  ? {
-                                      cardName: selectedCard.name,
-                                      cost: selectedCard.cost,
-                                      onEquipHere: () =>
-                                        dispatch({
-                                          type: 'EQUIP',
-                                          cardId: selectedCard.id,
-                                          targetFormationId: f.id,
-                                        }),
-                                    }
-                                  : undefined
-                              }
-                              quickActions={
-                                f.side === state.activeSide && state.phase === 'ORDERS' && !isAiTurn
-                                  ? {
-                                      onStartMove: () => {
-                                        setMovingFormationId(f.id);
-                                        setSelectedCardId(null);
-                                      },
-                                      canQuickRepair1: state.pp.AXIS >= 1,
-                                      onQuickRepair1: () =>
-                                        dispatch({
-                                          type: 'REORGANIZE',
-                                          formationId: f.id,
-                                          points: 1,
-                                        }),
-                                    }
-                                  : undefined
-                              }
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* USSR LANE */}
-                  <div className="formation-lane ussr-lane">
-                    <div className="lane-label">
-                      <span style={{ color: '#fca5a5', fontWeight: 800 }}>
-                        ⭐ Fronte URSS (ATT {ussrAtkSum} / DIF {ussrDefSum})
-                      </span>
-                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                        {secState.ussrCommander && (
-                          <span
-                            className="commander-chip ussr-cmd"
-                            title={secState.ussrCommander.effectText}
-                          >
-                            🎖 {secState.ussrCommander.name}
-                          </span>
-                        )}
-                        {state.config.modules.supply &&
-                          (state.config.supply.ussrPenalty[secState.marker] ?? 0) > 0 && (
-                            <span title={RULE_TOOLTIPS.RIFORNIMENTO} className="supply-warning">
-                              ⚠ Logistica −{state.config.supply.ussrPenalty[secState.marker]} ATT
-                            </span>
-                          )}
-                      </div>
-                    </div>
-
-                    {ussrUnits.length === 0 ? (
-                      <div className="empty-lane-msg">⚠️ Settore sguarnito! Nessuna armata URSS schierata.</div>
-                    ) : (
-                      <div className="formations-list">
-                        {ussrUnits.map((f) => {
-                          const canEquipHere =
-                            state.activeSide === 'USSR' &&
-                            selectedCard?.type === 'EQUIPAGGIAMENTO_TERRA' &&
-                            !f.encircled &&
-                            canEquipCardOnFormation(selectedCard, f);
-
-                          return (
-                            <FormationCard
-                              key={f.id}
-                              formation={f}
-                              viewerSide={humanSide}
-                              fogOfWar={state.config.modules.fogOfWar}
-                              experienceEnabled={state.config.modules.experience}
-                              selected={selectedFormationId === f.id || movingFormationId === f.id}
-                              onSelect={(unit) => {
-                                if (unit.side === state.activeSide && !isAiTurn) {
-                                  setSelectedFormationId(selectedFormationId === unit.id ? null : unit.id);
-                                }
-                              }}
-                              canReconvert={f.side === state.activeSide && state.phase === 'ORDERS' && !isAiTurn}
-                              onReconvertEquipment={(id) =>
-                                dispatch({ type: 'RECONVERT_EQUIPMENT', formationId: id })
-                              }
-                              equipHighlight={
-                                !isAiTurn && canEquipHere && selectedCard?.type === 'EQUIPAGGIAMENTO_TERRA'
-                                  ? {
-                                      cardName: selectedCard.name,
-                                      cost: selectedCard.cost,
-                                      onEquipHere: () =>
-                                        dispatch({
-                                          type: 'EQUIP',
-                                          cardId: selectedCard.id,
-                                          targetFormationId: f.id,
-                                        }),
-                                    }
-                                  : undefined
-                              }
-                              quickActions={
-                                f.side === state.activeSide && state.phase === 'ORDERS' && !isAiTurn
-                                  ? {
-                                      onStartMove: () => {
-                                        setMovingFormationId(f.id);
-                                        setSelectedCardId(null);
-                                      },
-                                      canQuickRepair1: state.pp.USSR >= 1,
-                                      onQuickRepair1: () =>
-                                        dispatch({
-                                          type: 'REORGANIZE',
-                                          formationId: f.id,
-                                          points: 1,
-                                        }),
-                                    }
-                                  : undefined
-                              }
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </section>
+        {/* CENTER INTERACTIVE GEOGRAPHIC WAR MAP OF THE EASTERN FRONT */}
+        <EasternFrontMap
+          state={state}
+          season={season}
+          humanSide={humanSide}
+          isAiTurn={isAiTurn}
+          selectedFormationId={selectedFormationId}
+          movingFormationId={movingFormationId}
+          selectedCard={selectedCard}
+          validMoveDestinations={validMoveDestinations}
+          onSelectFormation={(unit) => {
+            if (unit.side === state.activeSide && !isAiTurn) {
+              setSelectedFormationId(selectedFormationId === unit.id ? null : unit.id);
+            }
+          }}
+          onStartMoveFormation={(unit) => {
+            setMovingFormationId(unit.id);
+            setSelectedCardId(null);
+          }}
+          onMoveToSector={(secId) => {
+            if (movingFormation) {
+              dispatch({
+                type: 'REDEPLOY',
+                formationId: movingFormation.id,
+                to: secId,
+              });
+            }
+          }}
+          onAttackSector={(secId) => {
+            if (attackEventsInHand.length > 0) {
+              setAttackConfirmSector(secId);
+            } else {
+              dispatch({ type: 'ATTACK', sector: secId, eventCardIds: [] });
+            }
+          }}
+          onRetreatSector={(secId) => dispatch({ type: 'RETREAT', sector: secId })}
+          onEquipFormation={(formationId, cardId) =>
+            dispatch({
+              type: 'EQUIP',
+              cardId,
+              targetFormationId: formationId,
+            })
+          }
+          onAssignCommander={(secId, cardId) =>
+            dispatch({
+              type: 'EQUIP',
+              cardId,
+              targetSector: secId,
+            })
+          }
+          onPlayAirlift={(secId, cardId) =>
+            dispatch({
+              type: 'PLAY_EVENT',
+              cardId,
+              targetSector: secId,
+            })
+          }
+          onQuickRepair={(formationId, points) =>
+            dispatch({
+              type: 'REORGANIZE',
+              formationId,
+              points,
+            })
+          }
+          onReconvertEquipment={(formationId) =>
+            dispatch({ type: 'RECONVERT_EQUIPMENT', formationId })
+          }
+        />
 
         {renderSidePanel('USSR')}
       </main>

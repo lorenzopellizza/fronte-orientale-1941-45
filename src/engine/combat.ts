@@ -140,8 +140,8 @@ export function computeCombat(
   const cellToLose = getCellDefenderWouldLose(sector, defender, marker);
   if (cellToLose?.isObjectiveCity) {
     defenseModifiers.push({
-      source: `Difesa città obiettivo (${cellToLose.name})`,
-      value: 1,
+      source: `Fortificazioni città obiettivo ★ (${cellToLose.name})`,
+      value: 3,
     });
   }
 
@@ -230,7 +230,13 @@ export function computeCombat(
       } else {
         attackModifiers.push({ source: 'Superiorità aerea', value: 1 });
         const sup = attacker === 'AXIS' ? air.axisSupport : air.ussrSupport;
-        if (sup > 0) {
+        const alreadyUsedGroundSupportThisTurn =
+          attacker === 'AXIS' &&
+          !state.barbarossaPlayedThisTurn &&
+          (['NORD', 'CENTRO', 'SUD'] as SectorId[]).some((s) =>
+            state.sectors[s].enemyAdvancedHereThisTurn.includes('AXIS')
+          );
+        if (sup > 0 && !alreadyUsedGroundSupportThisTurn) {
           attackModifiers.push({ source: 'Supporto aereo a terra', value: sup });
         }
       }
@@ -341,14 +347,14 @@ export function computeCombat(
       for (const f of attackingFormations) {
         if (f.keywords.includes('INVERNO')) continue;
         if (isI41) {
-          winterPen += 1;
+          winterPen += 2;
         } else if (f.type === 'CORAZZATA' || f.type === 'MOTORIZZATA') {
           winterPen += 1;
         }
       }
       if (winterPen > 0) {
         attackModifiers.push({
-          source: isI41 ? 'Impreparazione invernale I41 (Asse)' : 'Inverno su Corazzate/Motorizzate (Asse)',
+          source: isI41 ? 'Impreparazione invernale I41 (−2 per formazione Asse)' : 'Inverno su Corazzate/Motorizzate (Asse)',
           value: -winterPen,
         });
       }
@@ -373,12 +379,12 @@ export function computeCombat(
     }
   }
 
-  // 13. Surprise in E41 (6.8)
-  if (cfg.modules.surprise && state.turn === 'E41' && defender === 'USSR') {
+  // 13. Surprise in E41 (6.8) — applies on the 1941 border line (marker === 1)
+  if (cfg.modules.surprise && state.turn === 'E41' && defender === 'USSR' && marker === 1) {
     const defCount = defendingFormations.length;
     if (defCount > 0) {
       defenseModifiers.push({
-        source: `Sorpresa strategica E41 (−1 x ${defCount} formazioni URSS)`,
+        source: `Sorpresa strategica sul confine E41 (−1 x ${defCount} formazioni URSS)`,
         value: -defCount,
       });
     }
@@ -463,10 +469,23 @@ export function computeCombat(
     }
   }
 
-  // Cap markerShift to valid board bounds [0..6]
+  // Cap markerShift in Winter for Axis (no multi-cell blitzkrieg breakthroughs in Russian winter)
+  // and halt 2-step breakthroughs at the gates of fortified Objective Cities (marker 4 for Axis)
   if (attacker === 'AXIS') {
+    if (cfg.modules.winter && season === 'INVERNO' && markerShift > 1) {
+      markerShift = 1;
+    }
+    if (marker === 3 && markerShift >= 2 && MAP_DATA[sector].cells[5]?.isObjectiveCity) {
+      // A breakthrough from cell 3 reaches cell 4 (the approaches to Leningrad/Moscow/Stalingrad)
+      // and must assault the fortified Objective City (cell 5) directly from cell 4.
+      markerShift = 1;
+    }
     markerShift = Math.min(markerShift, 6 - marker);
   } else {
+    if (marker === 2 && markerShift >= 2 && MAP_DATA[sector].cells[0]?.isObjectiveCity) {
+      // Similarly, advancing on Berlin (cell 0) from cell 2 halts at cell 1 (gates of Berlin)
+      markerShift = 1;
+    }
     markerShift = Math.min(markerShift, marker);
   }
 

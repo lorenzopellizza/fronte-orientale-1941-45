@@ -85,13 +85,14 @@ export function getMaxReactionsForDefender(state: GameState, defender: Side): nu
 }
 
 export function getEligibleReactingFormations(state: GameState, defender: Side): Formation[] {
+  const isWinter = state.config.modules.winter && getSeason(state.turn) === 'INVERNO';
   return state.formations.filter(
     (f) =>
       f.side === defender &&
       f.location === 'RISERVA' &&
       !f.encircled &&
       !f.reactedThisTurn &&
-      isFormationMobile(f)
+      (isFormationMobile(f) || (isWinter && f.keywords.includes('INVERNO')))
   );
 }
 
@@ -517,6 +518,17 @@ function startNewTurn(state: GameState): void {
   drawCardsUpTo(state, 'AXIS', state.config.handSize);
   drawCardsUpTo(state, 'USSR', state.config.handSize);
 
+  // 3b. Primo Inverno Russo (I41): la controffensiva sovietica conferisce l'Iniziativa all'URSS
+  if (turn === 'I41' && state.config.modules.winter && state.initiative !== 'USSR') {
+    state.initiative = 'USSR';
+    addLog(
+      state,
+      'TURN',
+      `❄️ Controffensiva del Primo Inverno Russo (I41): la Wehrmacht si arresta nel gelo, l'Iniziativa passa all'URSS!`,
+      'USSR'
+    );
+  }
+
   // 4. Ordini
   assignOrdersForTurn(state);
 
@@ -844,16 +856,10 @@ export function applyAction(currentState: GameState, action: GameAction): GameSt
         throw new Error(`Puoi far reagire al massimo ${maxReact} formazioni.`);
       }
 
+      const eligibleIds = new Set(getEligibleReactingFormations(state, pc.defender).map((u) => u.id));
       for (const fid of action.reactingFormationIds) {
         const f = state.formations.find((u) => u.id === fid);
-        if (
-          !f ||
-          f.side !== pc.defender ||
-          f.location !== 'RISERVA' ||
-          f.encircled ||
-          f.reactedThisTurn ||
-          !isFormationMobile(f)
-        ) {
+        if (!f || !eligibleIds.has(fid)) {
           throw new Error(`La formazione ${fid} non è idonea a reagire dalla Riserva.`);
         }
         f.location = pc.sector;
@@ -952,6 +958,9 @@ export function applyAction(currentState: GameState, action: GameAction): GameSt
           state.sectors[action.sector].marker = Math.min(6, state.sectors[action.sector].marker + 1);
         } else {
           state.sectors[action.sector].marker = Math.max(0, state.sectors[action.sector].marker - 1);
+        }
+        if (!state.sectors[action.sector].retreatedSidesThisTurn.includes(def)) {
+          state.sectors[action.sector].retreatedSidesThisTurn.push(def);
         }
         addLog(
           state,

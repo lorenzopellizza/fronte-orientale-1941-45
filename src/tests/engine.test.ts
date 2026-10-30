@@ -248,4 +248,52 @@ describe('FRONTE ORIENTALE 1941-45 — Engine Unit Tests (M1)', () => {
     expect(state.phase).toBe('GAME_OVER');
     expect(state.winner).toBeTruthy();
   });
+
+  it('9. Anti-Cheese Balance Test: Mindless Axis (clicking only ATTACK Nord -> Centro -> Sud without cards or movement) cannot win in 3 turns', () => {
+    let state = createInitialState({ seed: 12345 });
+    let steps = 0;
+    const sectorsOrder: ('NORD' | 'CENTRO' | 'SUD')[] = ['NORD', 'CENTRO', 'SUD'];
+
+    while (state.phase !== 'GAME_OVER' && steps < 400) {
+      steps += 1;
+      if (state.activeSide === 'USSR') {
+        const decision = chooseAiAction(state);
+        state = applyAction(state, decision.action);
+        continue;
+      }
+
+      // Mindless Axis player
+      if (state.phase === 'NORMANDY_EVENT') {
+        const decision = chooseAiAction(state);
+        state = applyAction(state, decision.action);
+        continue;
+      }
+
+      if (state.phase === 'COMBAT') {
+        // Use AI only for mandatory loss/reaction/encirclement prompts
+        const decision = chooseAiAction(state);
+        state = applyAction(state, decision.action);
+        continue;
+      }
+
+      // In ORDERS phase, Mindless Axis ONLY clicks ATTACK on NORD, then CENTRO, then SUD, never playing cards or moving units
+      const attackableSector = sectorsOrder.find((sec) => {
+        if (state.sectors[sec].marker >= 6) return false;
+        return state.formations.some(
+          (f) => f.side === 'AXIS' && f.location === sec && !f.exhausted && !f.encircled
+        );
+      });
+
+      if (attackableSector && state.ordersRemaining.AXIS > 0) {
+        state = applyAction(state, { type: 'ATTACK', sector: attackableSector });
+      } else {
+        state = applyAction(state, { type: 'PASS' });
+      }
+    }
+
+    // Must NOT win in 3 turns (turnIndex <= 2) and must LOSE against StrategicBot if never using strategy/cards/movement!
+    const wonInThreeTurns = state.winner === 'AXIS' && state.turnIndex <= 2;
+    expect(wonInThreeTurns).toBe(false);
+    expect(state.winner).toBe('USSR');
+  });
 });

@@ -244,7 +244,56 @@ export function chooseAiAction(state: GameState): AiDecision {
     };
   }
 
-  // 3.1 High-priority ORDINE Events
+  // 3.1 High-priority ORDINE Events & Emergency Frontline Reinforcement
+  // First: if any sector is critically exposed (<= 1 unit or marker >= 3 for USSR / <= 2 for Axis with huge deficit)
+  // and we have formations waiting in RISERVA, deploy a reserve formation to the threatened sector immediately!
+  const reserveFormations = state.formations.filter(
+    (f) => f.side === side && f.location === 'RISERVA' && !f.encircled
+  );
+  if (reserveFormations.length > 0) {
+    const criticalSectors = [...SECTORS]
+      .map((sec) => {
+        const myUnits = state.formations.filter((f) => f.side === side && f.location === sec && !f.encircled);
+        const enUnits = state.formations.filter((f) => f.side === enemy && f.location === sec && !f.encircled);
+        const myDef = myUnits.reduce((s, f) => s + getFormationBaseDefense(f, state.config.modules.experience), 0);
+        const enAtk = enUnits.reduce((s, f) => s + getFormationBaseAttack(f, state.config.modules.experience), 0);
+        const marker = state.sectors[sec].marker;
+        const objectiveDanger =
+          side === 'USSR' ? (marker >= 4 ? 12 : marker >= 3 ? 6 : 0) : marker <= 2 ? 8 : 0;
+        const scarcityDanger = myUnits.length <= 1 ? 8 : 0;
+        const urgency = enAtk - myDef + objectiveDanger + scarcityDanger;
+        return { sec, urgency, myUnitsCount: myUnits.length, marker };
+      })
+      .sort((a, b) => b.urgency - a.urgency);
+
+    const mostUrgent = criticalSectors[0];
+    if (mostUrgent && (mostUrgent.urgency >= 7 || mostUrgent.myUnitsCount <= 1)) {
+      // Pick strongest reserve unit (preferring URBANO for marker >= 4, or INVERNO in winter)
+      const bestReserve = [...reserveFormations].sort((a, b) => {
+        const aBonus =
+          (mostUrgent.marker >= 4 && a.keywords.includes('URBANO') ? 4 : 0) +
+          (getSeason(state.turn) === 'INVERNO' && a.keywords.includes('INVERNO') ? 3 : 0);
+        const bBonus =
+          (mostUrgent.marker >= 4 && b.keywords.includes('URBANO') ? 4 : 0) +
+          (getSeason(state.turn) === 'INVERNO' && b.keywords.includes('INVERNO') ? 3 : 0);
+        return (
+          getFormationBaseDefense(b, state.config.modules.experience) +
+          bBonus -
+          (getFormationBaseDefense(a, state.config.modules.experience) + aBonus)
+        );
+      })[0];
+
+      return {
+        action: {
+          type: 'REDEPLOY',
+          formationId: bestReserve.id,
+          to: mostUrgent.sec,
+        },
+        reasoning: `${hqName}: Rinforzo d'emergenza — ${bestReserve.name} inviata dalla Riserva per blindare il Settore ${mostUrgent.sec}!`,
+      };
+    }
+  }
+
   for (const card of hand) {
     if (card.type !== 'EVENTO' || card.timing !== 'ORDINE') continue;
     if (card.onlyTurn && card.onlyTurn !== state.turn) continue;
@@ -469,9 +518,9 @@ export function chooseAiAction(state: GameState): AiDecision {
 
   if (attackOptions.length > 0) {
     const best = attackOptions[0];
-    // Attack if expected diff is >= 1, or >= 0 with high strategic value / initiative
-    const minAcceptableDiff = side === 'AXIS' && state.turn === 'E41' ? 0 : 1;
-    if (best.diff >= minAcceptableDiff || (best.diff >= 0 && best.score >= 2)) {
+    // Attack only when odds are genuinely favorable (diff >= 2, or >= 1 in E41 for Axis)
+    const minAcceptableDiff = side === 'AXIS' && state.turn === 'E41' ? 1 : 2;
+    if (best.diff >= minAcceptableDiff || (best.diff >= 1 && best.score >= 4)) {
       return {
         action: {
           type: 'ATTACK',
@@ -562,8 +611,8 @@ export function chooseAiAction(state: GameState): AiDecision {
     }
   }
 
-  // 3.8 Secondary Attack if we still have orders and an even-odds battle (diff >= 0)
-  if (attackOptions.length > 0 && attackOptions[0].diff >= 0) {
+  // 3.8 Secondary Attack if we still have orders and a solid advantage (diff >= 2)
+  if (attackOptions.length > 0 && attackOptions[0].diff >= 2) {
     const best = attackOptions[0];
     return {
       action: {
@@ -571,7 +620,7 @@ export function chooseAiAction(state: GameState): AiDecision {
         sector: best.sector,
         eventCardIds: best.eventIds,
       },
-      reasoning: `${hqName}: Attacco di logoramento lanciato nel Settore ${best.sector}.`,
+      reasoning: `${hqName}: Offensiva secondaria lanciata nel Settore ${best.sector}.`,
     };
   }
 
